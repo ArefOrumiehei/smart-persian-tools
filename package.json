@@ -1,0 +1,33 @@
+{
+  "name": "smart-persian-tools",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "biuld": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "keywords": [
+    "persian",
+    "utility",
+    "toolkit",
+    "iran",
+    "farsi",
+    "jalali"
+  ],
+  "author": "",
+  "license": "MIT",
+  "description": "Persian-first utility toolkit",
+  "devDependencies": {
+    "@types/node": "^25.8.0",
+    "@vitest/coverage-v8": "^4.1.6",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  }
+}
