@@ -1,6 +1,6 @@
 <div align="right">
 
-<a href="./README.fa.md">فارسی</a>
+<a href="https://github.com/ArefOrumiehei/smart-persian-tools/blob/master/README.fa.md">نسخه فارسی</a>
 
 </div>
 
