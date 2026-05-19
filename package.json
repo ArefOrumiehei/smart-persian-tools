@@ -14,13 +14,17 @@
   },
   "keywords": [
     "persian",
-    "utility",
-    "toolkit",
     "iran",
     "farsi",
-    "jalali"
+    "utility",
+    "toolkit",
+    "jalali",
+    "iranian-phone",
+    "national-code",
+    "toman",
+    "rial"
   ],
-  "author": "",
+  "author": "ArefOrumiehei",
   "license": "MIT",
   "description": "Persian-first utility toolkit",
   "devDependencies": {
