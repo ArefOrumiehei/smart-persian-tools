@@ -332,6 +332,7 @@ const PROVINCE_CODES: Record<string, ProvinceInfo> = {
   '470': { code: '470', province: 'هرمزگان', city: 'گاوبندی' },
   '471': { code: '471', province: 'امور خارجه', city: 'امور خارجه' },
   '472': { code: '472', province: 'امور خارجه', city: 'امور خارجه' },
+  '507': { code: '507', province: 'آذربایجان شرقی', city: 'ملکان' },
 };
 
 export const validateIranianNationalCode = (code: string): boolean => {
