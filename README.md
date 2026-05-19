@@ -1,6 +1,6 @@
 <div align="right">
 
-<a href="./README.fa.md">فارسی</a>
+<a href="./README.Fa.md">فارسی</a>
 
 </div>
 
