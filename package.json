@@ -5,12 +5,16 @@
   "module": "dist/index.js",
   "types": "dist/index.js",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "README.fa.md",
+    "LICENSE"
   ],
   "scripts": {
-    "biuld": "tsup src/index.ts --format cjs,esm --dts",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
     "test": "vitest",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "prepublishOnly": "npm run test && npm run build"
   },
   "keywords": [
     "persian",
@@ -24,9 +28,9 @@
     "toman",
     "rial"
   ],
-  "author": "ArefOrumiehei",
+  "author": "Aref Orumiehei",
   "license": "MIT",
-  "description": "Persian-first utility toolkit",
+  "description": "Modern Persian/Iranian utility toolkit for JavaScript & TypeScript",
   "devDependencies": {
     "@types/node": "^25.8.0",
     "@vitest/coverage-v8": "^4.1.6",
