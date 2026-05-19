@@ -6,6 +6,17 @@
 
 # Smart-Persian-Tools
 
+<div align="center">
+
+<!-- ![CI](https://github.com/ArefOrumiehei/smart-persian-tools/actions/workflows/ci.yml/badge.svg) -->
+![npm version](https://img.shields.io/npm/v/smart-persian-tools)
+![downloads](https://img.shields.io/npm/dm/smart-persian-tools)
+![license](https://img.shields.io/npm/l/smart-persian-tools)
+![typescript](https://img.shields.io/badge/TypeScript-Ready-blue)
+![tests](https://img.shields.io/badge/tests-passing-brightgreen)
+
+</div>
+
 A modern TypeScript utility library for Iranian applications.
 Includes Persian digit tools, Iranian phone utilities, national code validation, currency helpers, and Jalali date utilities.
 
