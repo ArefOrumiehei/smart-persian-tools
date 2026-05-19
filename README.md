@@ -8,7 +8,7 @@
 
 <div align="center">
 
-<!-- ![CI](https://github.com/ArefOrumiehei/smart-persian-tools/actions/workflows/ci.yml/badge.svg) -->
+![CI](https://github.com/ArefOrumiehei/smart-persian-tools/actions/workflows/ci.yml/badge.svg)
 ![npm version](https://img.shields.io/npm/v/smart-persian-tools)
 ![downloads](https://img.shields.io/npm/dm/smart-persian-tools)
 ![license](https://img.shields.io/npm/l/smart-persian-tools)
