@@ -1,6 +1,9 @@
+src/
+test/
 tests/
 coverage/
-src/
+.vscode/
+.github/
+node_modules/
 vitest.config.ts
 tsconfig.json
-.github/
