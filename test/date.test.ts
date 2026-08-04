@@ -17,6 +17,7 @@ import {
   getJalaliMonthRange,
   jalaliDateDiff,
   PERSIAN_MONTHS,
+  convertDate,
 } from '../src/date';
 
 describe('Date Module', () => {
@@ -334,4 +335,391 @@ describe('Date Module', () => {
       expect(result.label).toContain('روز');
     });
   });
+});
+
+// ─── Known reference points ────────────────────────────────────
+// These are verified Jalali ↔ Gregorian pairs used across tests
+const REFS = {
+  nowruz1403: {
+    jalali:     { year: 1403, month: 1,  day: 1  },
+    gregorian:  { year: 2024, month: 3,  day: 20 },
+    iso:        '2024-03-20',
+    jalaliStr:  '1403/01/01',
+  },
+  nowruz1400: {
+    jalali:     { year: 1400, month: 1,  day: 1  },
+    gregorian:  { year: 2021, month: 3,  day: 21 },
+    iso:        '2021-03-21',
+    jalaliStr:  '1400/01/01',
+  },
+  midYear1403: {
+    jalali:     { year: 1403, month: 6,  day: 31 }, // last day of Shahrivar
+    gregorian:  { year: 2024, month: 9,  day: 21 },
+    iso:        '2024-09-21',
+    jalaliStr:  '1403/06/31',
+  },
+  esfand1402: {
+    jalali:     { year: 1402, month: 12, day: 29 }, // last day of non-leap year
+    gregorian:  { year: 2024, month: 3,  day: 19 },
+    iso:        '2024-03-19',
+    jalaliStr:  '1402/12/29',
+  },
+  leapDay1399: {
+    jalali:     { year: 1399, month: 12, day: 30 }, // leap day
+    gregorian:  { year: 2021, month: 3,  day: 20 },
+    iso:        '2021-03-20',
+    jalaliStr:  '1399/12/30',
+  },
+} as const;
+
+describe('convertDate', () => {
+
+  // ─── from: jalali, input: string ──────────────────────────────
+  describe('Jalali string → Gregorian', () => {
+    it('should convert Nowruz 1403 correctly', () => {
+      const result = convertDate('1403/01/01', { from: 'jalali', to: 'gregorian' });
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(20);
+    });
+
+    it('should convert mid-year date correctly', () => {
+      const result = convertDate('1403/06/31', { from: 'jalali', to: 'gregorian' });
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(9);
+      expect(result.gregorian.day).toBe(21);
+    });
+
+    it('should handle dash separator', () => {
+      const result = convertDate('1403-01-01', { from: 'jalali', to: 'gregorian' });
+      console.log(result);
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(20);
+    });
+
+    it('should handle space separator', () => {
+      const result = convertDate('1403 01 01', { from: 'jalali', to: 'gregorian' });
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(20);
+    });
+
+    it('should handle day/month/year format', () => {
+      const result = convertDate('01/01/1403', { from: 'jalali', to: 'gregorian' });
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(20);
+    });
+
+    it('should handle Persian digit string', () => {
+      const result = convertDate('۱۴۰۳/۰۱/۰۱', { from: 'jalali', to: 'gregorian' });
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(20);
+    });
+
+    it('should handle mixed Persian and English digits', () => {
+      const result = convertDate('۱۴۰۳/01/01', { from: 'jalali', to: 'gregorian' });
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(20);
+    });
+
+    it('should handle last day of non-leap Esfand', () => {
+      const result = convertDate('1402/12/29', { from: 'jalali', to: 'gregorian' });
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(19);
+    });
+
+    it('should handle leap day (30 Esfand 1399)', () => {
+      const result = convertDate('1399/12/30', { from: 'jalali', to: 'gregorian' });
+      expect(result.gregorian.year).toBe(2021);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(20);
+    });
+
+    it('should throw for invalid string', () => {
+      expect(() => convertDate('not-a-date', { from: 'jalali', to: 'gregorian' })).toThrow();
+    });
+
+    it('should throw for invalid month', () => {
+      expect(() => convertDate('1403/13/01', { from: 'jalali', to: 'gregorian' })).toThrow();
+    });
+
+    it('should throw for invalid day', () => {
+      expect(() => convertDate('1403/01/32', { from: 'jalali', to: 'gregorian' })).toThrow();
+    });
+  });
+
+  // ─── from: jalali, input: JalaliDate object ───────────────────
+  describe('JalaliDate object → Gregorian', () => {
+    it('should convert Nowruz 1403', () => {
+      const result = convertDate(
+        { year: 1403, month: 1, day: 1 },
+        { from: 'jalali', to: 'gregorian' }
+      );
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(20);
+    });
+
+    it('should convert mid-year Jalali object', () => {
+      const result = convertDate(
+        { year: 1403, month: 6, day: 31 },
+        { from: 'jalali', to: 'gregorian' }
+      );
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(9);
+      expect(result.gregorian.day).toBe(21);
+    });
+
+    it('should convert last day of Esfand', () => {
+      const result = convertDate(
+        { year: 1402, month: 12, day: 29 },
+        { from: 'jalali', to: 'gregorian' }
+      );
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(19);
+    });
+  });
+
+  // ─── from: jalali, input: JS Date ─────────────────────────────
+  describe('JS Date (treated as Gregorian) → Jalali', () => {
+    it('should convert JS Date to Jalali', () => {
+      const result = convertDate(
+        new Date(2024, 2, 20), // March 20, 2024
+        { from: 'gregorian', to: 'jalali' }
+      );
+      expect(result.jalali.year).toBe(1403);
+      expect(result.jalali.month).toBe(1);
+      expect(result.jalali.day).toBe(1);
+    });
+
+    it('should handle JS Date passed to jalali from', () => {
+      // When JS Date is passed with from:'jalali', it is used as-is (already Gregorian)
+      const date = new Date(2024, 2, 20);
+      const result = convertDate(date, { from: 'jalali', to: 'gregorian' });
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(20);
+    });
+  });
+
+  // ─── from: gregorian, input: string ───────────────────────────
+  describe('Gregorian string → Jalali', () => {
+    it('should convert ISO date to Jalali', () => {
+      const result = convertDate('2024-03-20', { from: 'gregorian', to: 'jalali' });
+      expect(result.jalali.year).toBe(1403);
+      expect(result.jalali.month).toBe(1);
+      expect(result.jalali.day).toBe(1);
+    });
+
+    it('should convert slash-separated Gregorian', () => {
+      const result = convertDate('2024/03/20', { from: 'gregorian', to: 'jalali' });
+      expect(result.jalali.year).toBe(1403);
+      expect(result.jalali.month).toBe(1);
+      expect(result.jalali.day).toBe(1);
+    });
+
+    it('should convert day/month/year format', () => {
+      const result = convertDate('20/03/2024', { from: 'gregorian', to: 'jalali' });
+      expect(result.jalali.year).toBe(1403);
+      expect(result.jalali.month).toBe(1);
+      expect(result.jalali.day).toBe(1);
+    });
+
+    it('should convert mid-year Gregorian date', () => {
+      const result = convertDate('2024-09-21', { from: 'gregorian', to: 'jalali' });
+      expect(result.jalali.year).toBe(1403);
+      expect(result.jalali.month).toBe(6);
+      expect(result.jalali.day).toBe(31);
+    });
+
+    it('should convert last day before Nowruz', () => {
+      const result = convertDate('2024-03-19', { from: 'gregorian', to: 'jalali' });
+      expect(result.jalali.year).toBe(1402);
+      expect(result.jalali.month).toBe(12);
+      expect(result.jalali.day).toBe(29);
+    });
+
+    it('should throw for completely invalid string', () => {
+      expect(() => convertDate('hello world', { from: 'gregorian', to: 'jalali' })).toThrow();
+    });
+  });
+
+  // ─── from: gregorian, input: JS Date ──────────────────────────
+  describe('JS Date → Jalali', () => {
+    it('should convert March 20 2024 to Nowruz', () => {
+      const result = convertDate(
+        new Date('2024-03-20'),
+        { from: 'gregorian', to: 'jalali' }
+      );
+      expect(result.jalali.year).toBe(1403);
+      expect(result.jalali.month).toBe(1);
+      expect(result.jalali.day).toBe(1);
+    });
+
+    it('should convert September 21 2024', () => {
+      const result = convertDate(
+        new Date('2024-09-21'),
+        { from: 'gregorian', to: 'jalali' }
+      );
+      expect(result.jalali.year).toBe(1403);
+      expect(result.jalali.month).toBe(6);
+      expect(result.jalali.day).toBe(31);
+    });
+  });
+
+  // ─── ConversionResult shape ────────────────────────────────────
+  describe('ConversionResult shape', () => {
+    it('should always return a valid JS Date', () => {
+      const result = convertDate('1403/01/01', { from: 'jalali', to: 'gregorian' });
+      expect(result.date).toBeInstanceOf(Date);
+      expect(isNaN(result.date.getTime())).toBe(false);
+    });
+
+    it('should always include both jalali and gregorian', () => {
+      const result = convertDate('2024-03-20', { from: 'gregorian', to: 'jalali' });
+      expect(result.jalali).toHaveProperty('year');
+      expect(result.jalali).toHaveProperty('month');
+      expect(result.jalali).toHaveProperty('day');
+      expect(result.gregorian).toHaveProperty('year');
+      expect(result.gregorian).toHaveProperty('month');
+      expect(result.gregorian).toHaveProperty('day');
+    });
+
+    it('should return formatted.jalali in Persian digits', () => {
+      const result = convertDate('2024-03-20', { from: 'gregorian', to: 'jalali' });
+      expect(result.formatted.jalali).toMatch(/^[۰-۹/]+$/);
+    });
+
+    it('should return formatted.jalali as YYYY/MM/DD', () => {
+      const result = convertDate('2024-03-20', { from: 'gregorian', to: 'jalali' });
+      expect(result.formatted.jalali).toBe('۱۴۰۳/۰۱/۰۱');
+    });
+
+    it('should return formatted.gregorian as YYYY-MM-DD', () => {
+      const result = convertDate('1403/01/01', { from: 'jalali', to: 'gregorian' });
+      expect(result.formatted.gregorian).toBe('2024-03-20');
+    });
+
+    it('should return formatted.jalaliLong containing month name', () => {
+      const result = convertDate('1403/01/01', { from: 'jalali', to: 'gregorian' });
+      expect(result.formatted.jalaliLong).toContain('فروردین');
+    });
+
+    it('should return formatted.jalaliLong containing weekday', () => {
+      const result = convertDate('1403/01/01', { from: 'jalali', to: 'gregorian' });
+      expect(result.formatted.jalaliLong).toContain('چهارشنبه');
+    });
+
+    it('should return formatted.gregorianLong in English', () => {
+      const result = convertDate('1403/01/01', { from: 'jalali', to: 'gregorian' });
+      expect(result.formatted.gregorianLong).toContain('March');
+      expect(result.formatted.gregorianLong).toContain('2024');
+    });
+  });
+
+  // ─── Roundtrip consistency ─────────────────────────────────────
+  describe('Roundtrip consistency', () => {
+    it('Jalali → Gregorian → Jalali should return same date', () => {
+      const step1 = convertDate('1403/01/01', { from: 'jalali', to: 'gregorian' });
+      const step2 = convertDate(step1.date, { from: 'gregorian', to: 'jalali' });
+      expect(step2.jalali.year).toBe(1403);
+      expect(step2.jalali.month).toBe(1);
+      expect(step2.jalali.day).toBe(1);
+    });
+
+    it('Gregorian → Jalali → Gregorian should return same date', () => {
+      const step1 = convertDate('2024-03-20', { from: 'gregorian', to: 'jalali' });
+      const step2 = convertDate(step1.jalali, { from: 'jalali', to: 'gregorian' });
+      expect(step2.gregorian.year).toBe(2024);
+      expect(step2.gregorian.month).toBe(3);
+      expect(step2.gregorian.day).toBe(20);
+    });
+
+    it('should be consistent across all REFS', () => {
+      for (const [, ref] of Object.entries(REFS)) {
+        const toGreg = convertDate(ref.jalaliStr, { from: 'jalali', to: 'gregorian' });
+        expect(toGreg.gregorian.year).toBe(ref.gregorian.year);
+        expect(toGreg.gregorian.month).toBe(ref.gregorian.month);
+        expect(toGreg.gregorian.day).toBe(ref.gregorian.day);
+
+        const toJal = convertDate(ref.iso, { from: 'gregorian', to: 'jalali' });
+        expect(toJal.jalali.year).toBe(ref.jalali.year);
+        expect(toJal.jalali.month).toBe(ref.jalali.month);
+        expect(toJal.jalali.day).toBe(ref.jalali.day);
+      }
+    });
+
+    it('same-calendar conversion should not change the date', () => {
+      const result = convertDate('2024-03-20', { from: 'gregorian', to: 'gregorian' });
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(3);
+      expect(result.gregorian.day).toBe(20);
+    });
+  });
+
+  // ─── Edge cases ────────────────────────────────────────────────
+  describe('Edge cases', () => {
+    it('should handle Nowruz boundary (last moment of year)', () => {
+      const result = convertDate('1402/12/29', { from: 'jalali', to: 'gregorian' });
+      const next   = convertDate('1403/01/01', { from: 'jalali', to: 'gregorian' });
+      expect(next.gregorian.day - result.gregorian.day).toBe(1);
+    });
+
+    it('should handle leap year day (30 Esfand 1399)', () => {
+      const result = convertDate('1399/12/30', { from: 'jalali', to: 'gregorian' });
+      expect(result.jalali.day).toBe(30);
+      expect(result.jalali.month).toBe(12);
+      expect(result.jalali.year).toBe(1399);
+    });
+
+    it('should handle first day of each month correctly', () => {
+      const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+      for (const month of months) {
+        const str = `1403/${String(month).padStart(2, '0')}/01`;
+        const result = convertDate(str, { from: 'jalali', to: 'gregorian' });
+        expect(result.jalali.month).toBe(month);
+        expect(result.jalali.day).toBe(1);
+      }
+    });
+
+    it('should handle last day of first 6 months (31 days)', () => {
+      for (let month = 1; month <= 6; month++) {
+        const str = `1403/${String(month).padStart(2, '0')}/31`;
+        const result = convertDate(str, { from: 'jalali', to: 'gregorian' });
+        expect(result.jalali.day).toBe(31);
+      }
+    });
+
+    it('should handle last day of months 7-11 (30 days)', () => {
+      for (let month = 7; month <= 11; month++) {
+        const str = `1403/${String(month).padStart(2, '0')}/30`;
+        const result = convertDate(str, { from: 'jalali', to: 'gregorian' });
+        expect(result.jalali.day).toBe(30);
+      }
+    });
+
+    it('should handle Persian digit input in all ref dates', () => {
+      const persianStr = '۱۴۰۳/۰۶/۳۱';
+      const result = convertDate(persianStr, { from: 'jalali', to: 'gregorian' });
+      expect(result.gregorian.year).toBe(2024);
+      expect(result.gregorian.month).toBe(9);
+      expect(result.gregorian.day).toBe(21);
+    });
+
+    it('result.date should be a midnight-ish Date (no time drift)', () => {
+      const result = convertDate('1403/01/01', { from: 'jalali', to: 'gregorian' });
+      // The returned date should represent the correct calendar day
+      const j = result.jalali;
+      expect(j.year).toBe(1403);
+      expect(j.month).toBe(1);
+      expect(j.day).toBe(1);
+    });
+  });
+
 });

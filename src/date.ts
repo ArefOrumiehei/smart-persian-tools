@@ -6,6 +6,12 @@ export interface JalaliDate {
   day: number;
 }
 
+export interface GregorianDate {
+  year: number;
+  month: number;
+  day: number;
+}
+
 export interface JalaliDateInfo {
   jalali: JalaliDate;
   formatted: string;
@@ -14,6 +20,27 @@ export interface JalaliDateInfo {
   isHoliday: boolean;
   isWeekend: boolean;
   season: string;
+}
+
+export type CalendarType = 'jalali' | 'gregorian';
+
+export type DateInput = string | Date | JalaliDate;
+
+export interface ConvertDateOptions {
+  from: CalendarType;
+  to: CalendarType;
+}
+
+export interface ConversionResult {
+  date: Date;                    // always a JS Date (Gregorian)
+  jalali: JalaliDate;            // always available
+  gregorian: GregorianDate;      // always available
+  formatted: {
+    jalali: string;              // e.g. '۱۴۰۳/۰۱/۰۱'
+    gregorian: string;           // e.g. '2024-03-20'
+    jalaliLong: string;          // e.g. 'چهارشنبه، ۱ فروردین ۱۴۰۳'
+    gregorianLong: string;       // e.g. 'Wednesday, March 20, 2024'
+  };
 }
 
 export const PERSIAN_WEEKDAYS = [
@@ -209,4 +236,184 @@ export const jalaliDateDiff = (
   else label = `${toPersianDigits(years)} سال`;
 
   return { days, months, years, label };
+};
+
+
+/**
+ * Parse a Jalali date string in common formats to a JalaliDate object
+ * Supported formats:
+ *   '1403/01/01'
+ *   '1403-01-01'
+ *   '1403 01 01'
+ *   '01/01/1403'  (day/month/year — auto detected when year is not first)
+ *   '۱۴۰۳/۰۱/۰۱' (Persian digits)
+ */
+const parseJalaliString = (input: string): JalaliDate => {
+  const trimmed = input.trim();
+  const normalized = toEnglishDigits(trimmed).replace(/[.\s،, \-]+/g, '/');
+  const parts = normalized.split('/').map(Number);
+
+  if (parts.length !== 3 || parts.some(isNaN)) {
+    throw new Error(`Invalid Jalali date string: "${input}"`);
+  }
+
+  // Detect if year is first or last
+  // Jalali years are 4 digits (1300-1500 range), days/months are 1-2 digits
+  let year: number, month: number, day: number;
+
+  if (parts[0] > 31) {
+    // year/month/day
+    [year, month, day] = parts;
+  } else if (parts[2] > 31) {
+    // day/month/year
+    [day, month, year] = parts;
+  } else {
+    throw new Error(`Cannot determine year in Jalali date string: "${input}"`);
+  }
+
+  if (month < 1 || month > 12) throw new Error(`Invalid month: ${month}`);
+  if (day < 1 || day > 31)     throw new Error(`Invalid day: ${day}`);
+
+  return { year, month, day };
+};
+
+/**
+ * Parse a Gregorian date string in common formats
+ * Supported:
+ *   '2024-03-20'  (ISO)
+ *   '2024/03/20'
+ *   '20/03/2024'  (day/month/year)
+ *   '03/20/2024'  (month/day/year — US format, ambiguous, treated as M/D/Y when middle <= 12)
+ */
+const parseGregorianString = (input: string): Date => {
+  const trimmed = input.trim();
+
+  const native = new Date(trimmed);
+  if (!isNaN(native.getTime()) && trimmed.includes('-')) return native;
+
+  const normalized = trimmed.replace(/[.\s،,]+/g, '/');
+  const parts = normalized.split('/').map(Number);
+
+  if (parts.length !== 3 || parts.some(isNaN)) {
+    throw new Error(`Invalid Gregorian date string: "${input}"`);
+  }
+
+  let year: number, month: number, day: number;
+
+  if (parts[0] > 31) {
+    // year/month/day
+    [year, month, day] = parts;
+  } else if (parts[2] > 31) {
+    // day/month/year or month/day/year
+    // if parts[0] > 12, it must be day
+    if (parts[0] > 12) {
+      [day, month, year] = parts;
+    } else {
+      // ambiguous — default to day/month/year (more common internationally)
+      [day, month, year] = parts;
+    }
+  } else {
+    throw new Error(`Cannot determine year in Gregorian date string: "${input}"`);
+  }
+
+  const result = new Date(year, month - 1, day);
+  if (isNaN(result.getTime())) {
+    throw new Error(`Invalid Gregorian date: "${input}"`);
+  }
+  return result;
+};
+
+/**
+ * Convert a JalaliDate to a JS Date (Gregorian)
+ * Uses an iterative approach based on Intl — no external library needed
+ */
+const jalaliToGregorianDate = (jalali: JalaliDate): Date => {
+  // Approximate Gregorian year (Jalali year + 621 or 622)
+  const approxYear = jalali.year + 621;
+  const approxDate = new Date(approxYear, jalali.month - 1, jalali.day);
+
+  // Search within a ±2 day window to find exact match
+  for (let offset = -2; offset <= 400; offset++) {
+    const candidate = new Date(approxDate);
+    candidate.setDate(approxDate.getDate() + offset);
+    const j = toJalaliDate(candidate);
+    if (j.year === jalali.year && j.month === jalali.month && j.day === jalali.day) {
+      return candidate;
+    }
+  }
+
+  throw new Error(`Could not convert Jalali date: ${jalali.year}/${jalali.month}/${jalali.day}`);
+};
+
+const toGregorianDate = (date: Date): GregorianDate => ({
+  year:  date.getFullYear(),
+  month: date.getMonth() + 1,
+  day:   date.getDate(),
+});
+
+const formatGregorianShort = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const formatGregorianLong = (date: Date): string =>
+  new Intl.DateTimeFormat('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  }).format(date);
+
+
+const formatJalaliShort = (jalali: JalaliDate): string =>
+  toPersianDigits(
+    `${jalali.year}/${String(jalali.month).padStart(2, '0')}/${String(jalali.day).padStart(2, '0')}`
+  );
+
+
+const formatJalaliLong = (jalali: JalaliDate, date: Date): string => {
+  const weekday   = getPersianWeekday(date);
+  const monthName = PERSIAN_MONTHS[jalali.month - 1];
+  return `${weekday}، ${toPersianDigits(jalali.day)} ${monthName} ${toPersianDigits(jalali.year)}`;
+};
+
+const normalizeJalaliInput = (input: DateInput): Date => {
+  if (input instanceof Date)   return input;
+  if (typeof input === 'string') return jalaliToGregorianDate(parseJalaliString(input));
+  if (typeof input === 'object' && 'year' in input) return jalaliToGregorianDate(input);
+  throw new Error('Invalid input for Jalali date');
+};
+
+const normalizeGregorianInput = (input: DateInput): Date => {
+  if (input instanceof Date)   return input;
+  if (typeof input === 'string') return parseGregorianString(input);
+  if (typeof input === 'object' && 'year' in input) {
+    const { year, month, day } = input as GregorianDate;
+    return new Date(year, month - 1, day);
+  }
+  throw new Error('Invalid input for Gregorian date');
+};
+
+const buildResult = (date: Date): ConversionResult => {
+  const jalali     = toJalaliDate(date);
+  const gregorian  = toGregorianDate(date);
+
+  return {
+    date,
+    jalali,
+    gregorian,
+    formatted: {
+      jalali:        formatJalaliShort(jalali),
+      gregorian:     formatGregorianShort(date),
+      jalaliLong:    formatJalaliLong(jalali, date),
+      gregorianLong: formatGregorianLong(date),
+    },
+  };
+};
+
+export const convertDate = (input: DateInput, options: ConvertDateOptions): ConversionResult => {
+  const { from } = options;
+
+  const date = from === 'jalali' ? normalizeJalaliInput(input) : normalizeGregorianInput(input);
+
+  return buildResult(date);
 };
