@@ -652,6 +652,28 @@ Returns:
   season: 'بهار'
 }
 ```
+--- 
+
+# Latest Features
+## convertData
+Convert between Jalali and Gregorian calendars
+
+```
+ // Jalali string → result
+ convertDate('1403/01/01', { from: 'jalali', to: 'gregorian' })
+
+ // Gregorian string → result
+ convertDate('2024-03-20', { from: 'gregorian', to: 'jalali' })
+
+ // JalaliDate object → result
+ convertDate({ year: 1403, month: 1, day: 1 }, { from: 'jalali', to: 'gregorian' })
+
+ // JS Date → result
+ convertDate(new Date(), { from: 'gregorian', to: 'jalali' })
+
+ // Persian digit string → result
+ convertDate('۱۴۰۳/۰۱/۰۱', { from: 'jalali', to: 'gregorian' })
+```
 
 ---
 
