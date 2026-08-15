@@ -68,6 +68,12 @@ describe('Currency Module', () => {
     it('should not contain rial when toman is specified', () => {
       expect(formatCurrency(1_000, 'toman')).not.toContain('ریال');
     });
+    it('should not contain toman when show currency is false', () => {
+      expect(formatCurrency(1_000, 'toman', false)).not.toContain('تومان');
+    });
+    it('should not contain rial when show currency is false', () => {
+      expect(formatCurrency(1_000, 'rial', false)).not.toContain('ریال');
+    });
   });
 
   describe('addCurrencySuffix', () => {

@@ -21,9 +21,13 @@ const SCALES = [
 export const rialToToman = (rial: number): number => rial / 10;
 export const tomanToRial = (toman: number): number => toman * 10;
 
-export const formatCurrency = (amount: number, currency: Currency = 'toman'): string => {
+export const formatCurrency = (amount: number, currency: Currency = 'toman', showCurrency: boolean = true): string => {
   const formatted = amount.toLocaleString('fa-IR');
-  return currency === 'toman' ? `${formatted} تومان` : `${formatted} ریال`;
+  if (showCurrency) {
+    return currency === 'toman' ? `${formatted} تومان` : `${formatted} ریال`;
+  } else {
+    return `${formatted}`;    
+  }
 };
 
 export const addCurrencySuffix = (
